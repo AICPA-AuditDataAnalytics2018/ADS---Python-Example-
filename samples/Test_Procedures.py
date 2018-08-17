@@ -6,7 +6,7 @@ class Test_1_Procedures:
         print('Checking for gaps in Journal Entry IDs is started')
         from collections import deque
         import csv
-        writer = csv.writer(open("Output_Folder/Test_3_1_1_check_for_gaps_in_JE_ID", 'w'))
+        writer = csv.writer(open("Output_Folder/Test_3_1_1_check_for_gaps_in_JE_ID.csv", 'w'))
         je_nums = deque(maxlen=2)
         gaps = []
         for item in GL_Detail_YYYYMMDD_YYYYMMDD['Journal_ID']:
@@ -27,7 +27,7 @@ class Test_1_Procedures:
     def comparison_of_entries_of_GL_and_log_file(GL_Detail_YYYYMMDD_YYYYMMDD, Log_File_YYYYMMDD_YYYYMMDD):
         print('Comparison of entries in General Ledger and Log File is  for gaps in Journal Entry IDs is started')
         import csv
-        writer = csv.writer(open("Output_Folder/Test_3_1_2_Comparison_of_Entries_of_GL_and_Log_File", 'w'))
+        writer = csv.writer(open("Output_Folder/Test_3_1_2_Comparison_of_Entries_of_GL_and_Log_File.csv", 'w'))
         In_GL_not_in_LOG = set(GL_Detail_YYYYMMDD_YYYYMMDD['Journal_ID']) - set(Log_File_YYYYMMDD_YYYYMMDD['Journal_ID'])
         In_LOG_not_in_GL = set(Log_File_YYYYMMDD_YYYYMMDD['Journal_ID']) - set(GL_Detail_YYYYMMDD_YYYYMMDD['Journal_ID'])
         writer.writerow(['Following %a journal entries exist in General Ledger, but missing from the Log File:'
@@ -53,7 +53,7 @@ class Test_1_Procedures:
         recon_gl_to_log = recon_gl_to_log.drop('Entered_Date', axis=1)
         recon_gl_to_log = recon_gl_to_log.drop('Entered_Time', axis=1)
         failed_test = recon_gl_to_log.loc[recon_gl_to_log['Comparison'] != 0]
-        failed_test.to_csv('Output_Folder/Test_3_1_3_comparison_of_amounts_of_GL_and_log_file')
+        failed_test.to_csv('Output_Folder/Test_3_1_3_comparison_of_amounts_of_GL_and_log_file.csv')
         print('%d instances detected' %len(failed_test['Journal_ID']))
         print('Results saved at Output_Folder/Test_3_1_3_comparison_of_amounts_of_GL_and_log_file.csv')
 
@@ -66,7 +66,7 @@ class Test_2_Procedures:
         GL_Pivot = GL_Detail_YYYYMMDD_YYYYMMDD.pivot_table(index='Journal_ID', values='Net', aggfunc=sum)
         failed_test = GL_Pivot.loc[round(GL_Pivot['Net'], 2) != 0]
         failed_test = pd.DataFrame(failed_test.to_records())
-        failed_test.to_csv('Output_Folder/Test_3_2_1_check_for_incomplete_entries')
+        failed_test.to_csv('Output_Folder/Test_3_2_1_check_for_incomplete_entries.csv')
         print('%d instances detected' %len(failed_test['Journal_ID']))
         print('Results saved at Output_Folder/Test_3_2_1_check_for_incomplete_entries.csv')
 
@@ -83,7 +83,7 @@ class Test_2_Procedures:
         Duplicates = pd.DataFrame(Duplicates.to_records())
         GL_Copy = GL_Detail_YYYYMMDD_YYYYMMDD[['Journal_ID', 'GL_Account_Number', 'Period', 'Net']].copy()
         failed_test = GL_Copy.merge(Duplicates, on = ['GL_Account_Number', 'Period', 'Net'], how = 'right').fillna(0)
-        failed_test.to_csv('Output_Folder/Test_3_2_2_check_for_duplicate_entries')
+        failed_test.to_csv('Output_Folder/Test_3_2_2_check_for_duplicate_entries.csv')
         print('%d instances detected' %len(failed_test['Journal_ID']))
         print('Results saved at Output_Folder/Test_3_2_2_check_for_duplicate_entries.csv')
 
@@ -95,7 +95,7 @@ class Test_2_Procedures:
         GL_Copy = GL_Detail_YYYYMMDD_YYYYMMDD[['Journal_ID', 'GL_Account_Number', 'Period', 'Net']].copy()
         GL_Copy['1000s Remainder'] = GL_Copy['Net'] % 1000
         failed_test = GL_Copy.loc[GL_Copy['1000s Remainder'] == 0] 
-        failed_test.to_csv('Output_Folder/Test_3_2_3_check_for_round_dollar_entries')
+        failed_test.to_csv('Output_Folder/Test_3_2_3_check_for_round_dollar_entries.csv')
         print('%d instances detected' %len(failed_test['Journal_ID']))
         print('Results saved at Output_Folder/Test_3_2_3_check_for_round_dollar_entries.csv')
 
@@ -108,7 +108,7 @@ class Test_2_Procedures:
         print('Checking for Post Date Entries is started')
         GL_Copy = GL_Detail_YYYYMMDD_YYYYMMDD[['Journal_ID', 'Document_Date', 'Entered_Date', 'Period', 'Net']].copy()
         failed_test = GL_Copy.loc[GL_Copy['Document_Date'] > (GL_Copy['Entered_Date'] + 100)] #optimize&"accurify"
-        failed_test.to_csv('Output_Folder/Test_3_2_4_check_for_post_date_entries')
+        failed_test.to_csv('Output_Folder/Test_3_2_4_check_for_post_date_entries.csv')
         print('%d instances detected' %len(failed_test['Journal_ID']))
         print('Results saved at Output_Folder/Test_3_2_4_check_for_post_date_entries.csv')
 
@@ -125,7 +125,7 @@ class Test_2_Procedures:
                                                               GL_Copy['Entered_Time'].astype(str), format='%Y%m%d%H%M%S')
         GL_Copy['WeekDayNo'] = GL_Copy['Entry_Date_Time_Formatted'].apply(lambda x: x.isoweekday())
         failed_test = GL_Copy.loc[GL_Copy['WeekDayNo'] >= 6]
-        failed_test.to_csv('Output_Folder/Test_3_2_5.1_check_for_weekend_entries')
+        failed_test.to_csv('Output_Folder/Test_3_2_5.1_check_for_weekend_entries.csv')
         print('%d instances detected' %len(failed_test['Journal_ID']))
         print('Results saved at Output_Folder/Test_3_2_5.1_check_for_weekend_entries.csv')
 
@@ -139,7 +139,7 @@ class Test_2_Procedures:
                                                               GL_Copy['Entered_Time'].astype(str), format='%Y%m%d%H%M%S')
         GL_Copy['Hour'] = GL_Copy['Entry_Date_Time_Formatted'].dt.hour
         failed_test = GL_Copy.loc[(GL_Copy['Hour'] >= 20) | (GL_Copy['Hour'] <= 5)]
-        failed_test.to_csv('Output_Folder/Test_3_2_5.2_check_for_nights_entries')
+        failed_test.to_csv('Output_Folder/Test_3_2_5.2_check_for_nights_entries.csv')
         print('%d instances detected' %len(failed_test['Journal_ID']))
         print('Results saved at Output_Folder/Test_3_2_5.2_check_for_nights_entries.csv')
 
@@ -158,7 +158,7 @@ class Test_2_Procedures:
         Rare_Users = pd.DataFrame(Rare_Users.to_records())
         GL_Copy = GL_Detail_YYYYMMDD_YYYYMMDD[['Journal_ID', 'GL_Account_Number', 'Entered_By']].copy()
         failed_test = GL_Copy.merge(Rare_Users, on = ['Entered_By'], how = 'right').fillna(0)
-        failed_test.to_csv('Output_Folder/Test_3_2_6.1_check_for_rare_users')
+        failed_test.to_csv('Output_Folder/Test_3_2_6.1_check_for_rare_users.csv')
         print('%d instances detected' %len(failed_test['Entered_By']))
         print('Results saved at Output_Folder/Test_3_2_6.1_check_for_rare_users.csv')
 
@@ -173,6 +173,6 @@ class Test_2_Procedures:
         Rare_Accounts = pd.DataFrame(Rare_Accounts.to_records())
         GL_Copy = GL_Detail_YYYYMMDD_YYYYMMDD[['Journal_ID', 'GL_Account_Number', 'Entered_By']].copy()
         failed_test = GL_Copy.merge(Rare_Accounts, on = ['GL_Account_Number'], how = 'right').fillna(0)
-        failed_test.to_csv('Output_Folder/Test_3_2_6.2_check_for_rare_accounts')
+        failed_test.to_csv('Output_Folder/Test_3_2_6.2_check_for_rare_accounts.csv')
         print('%d instances detected' %len(failed_test['GL_Account_Number']))
         print('Results saved at Output_Folder/Test_3_2_6.2_check_for_rare_accounts.csv')

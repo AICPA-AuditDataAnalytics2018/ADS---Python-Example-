@@ -1,4 +1,4 @@
-Journal_ID,Journal_ID_Line_Number,JE_Line_Description,Business_Unit_Code,Effective_Date,Fiscal_Year,GL_Account_Number,Amount,Amount_Credit_Debit_Indicator,Amount_Currency,JE_Header_Description,Source,Entered_By,Document_Date,Entered_Date,Entered_Time,Period
+Journal_ID,Journal_ID_Line_Number,JE_Line_Description,Business_Unit_Code,Effective_Date,Fiscal_Year,GL_Account_Number,Amount,Amount_Credit_Debit_Indicator,Amount_Currency,JE_Header_ Description,Source,Entered_By,Document_Date,Entered_Date,Entered_Time,Period
 100000000,1,Postkosten ohne Tel.,9900,19000101,2007,473000,9770.52,S,USD,,SA,STEINER,20070101,20070122,101205,1
 100000000,2,,,19000101,2007,113100,9770.52,H,USD,,SA,STEINER,20070101,20070122,101205,1
 100000001,1,Reisekst./Unterkunft,9900,19000101,2007,474210,5875.2,S,USD,,SA,STEINER,20070101,20070122,101206,1
