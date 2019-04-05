@@ -24,4 +24,4 @@ TODO: Write credits
 
 ## License
 
-TODO: Write license
+Apache 2.0
