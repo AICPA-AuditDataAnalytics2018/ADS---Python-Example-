@@ -5,6 +5,7 @@ import numpy as np
 
 def output_decorator(func):
     def inner(*args, **kwargs):
+        print(f'{func.__name__} is now started')
         t = func(*args, **kwargs)
         print(f'{t.results} instances detected')
         print(f'Results saved at {t.output}')
@@ -19,12 +20,10 @@ class Test_1_Procedures:
     
     @output_decorator
     def check_for_gaps_in_JE_ID(GL_Detail_YYYYMMDD_YYYYMMDD, Journal_ID_Column = 'Journal_ID'):
-        
-        print('Checking for gaps in Journal Entry IDs is started')
-        writer = csv.writer(open("Output_Folder/Test_3_1_1_check_for_gaps_in_JE_ID.csv", 'w'))
-        
+                
         gaps = []
         previous = None
+        writer = csv.writer(open("Output_Folder/Test_3_1_1_check_for_gaps_in_JE_ID.csv", 'w'))
         
         for item in GL_Detail_YYYYMMDD_YYYYMMDD[Journal_ID_Column]:
             if not previous:
@@ -34,7 +33,7 @@ class Test_1_Procedures:
             if item - previous > 1:
                 writer.writerow([f'Gap identified! {previous} is followed by {item}'])
                 gaps.append([previous, item])
-            
+                
             previous = item      
 
         writer.writerow(['Test Results:']) 
