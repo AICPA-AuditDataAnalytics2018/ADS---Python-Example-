@@ -1,26 +1,45 @@
 # TODO - refactor to clean up and document better
+import csv
+import pandas as pd
+import numpy as np
+
+def output_decorator(func):
+    def inner(*args, **kwargs):
+        print(f'{func.__name__} is now started')
+        t = func(*args, **kwargs)
+        print(f'{t.results} instances detected')
+        print(f'Results saved at {t.output}')
+        return
+    return inner
+
 
 class Test_1_Procedures:
+    
     # 3.1.1 - Test 1.1 Check for gaps in journal entry numbers
-    def check_for_gaps_in_JE_ID(GL_Detail_YYYYMMDD_YYYYMMDD):
-        print('Checking for gaps in Journal Entry IDs is started')
-        from collections import deque
-        import csv
-        writer = csv.writer(open("Output_Folder/Test_3_1_1_check_for_gaps_in_JE_ID.csv", 'w'))
-        je_nums = deque(maxlen=2)
+    # This method assumes JE's are already sorted in ascending order
+    
+    @output_decorator
+    def check_for_gaps_in_JE_ID(GL_Detail,
+                                Journal_ID_Column = 'Journal_ID',
+                                output_file = 'Output_Folder/Test_3_1_1_check_for_gaps_in_JE_ID.csv'):        
         gaps = []
-        for item in GL_Detail_YYYYMMDD_YYYYMMDD['Journal_ID']:
-            je_nums.append(item)
-            if len(je_nums) == 1:
-                continue
-            if je_nums[1] - je_nums[0] > 1:
-                writer.writerow(['Gap identified! {} is followed by {}'.format(*je_nums)])
-                gaps.append(list(je_nums))
-
-        writer.writerow(['Test Results:']) 
-        writer.writerow(['Total of {} gaps found'.format(len(gaps))])
-        print('%d instances detected' %len(gaps))
-        print('Results saved at Output_Folder/Test_3_1_1_check_for_gaps_in_JE_ID.csv')
+        previous = None
+        
+        # Loop through each Journal ID, compare to previous
+        for item in GL_Detail[Journal_ID_Column]:
+            if previous and (item - previous > 1):
+                gaps.append([previous, item])
+            previous = item      
+        
+        # Write results to the output csv file.
+        with open(output_file, 'w') as file:
+            writer = csv.writer(file)
+            writer.writerow([f'Gap identified! Start gap number is followed by end gap number'])
+            writer.writerows(gaps)
+            writer.writerow(['Test Results:']) 
+            writer.writerow([f'Total of {len(gaps)} gaps found'])
+        
+        return ({"results":len(gaps), "output":output_file})
 
 
     # 3.1.2 Compare listing of journal entry numbers from system to log file
@@ -131,7 +150,6 @@ class Test_2_Procedures:
 
     # Check if Entry Time falls on between 8pm and 6am
     def check_for_nights_entries(GL_Detail_YYYYMMDD_YYYYMMDD):
-        import pandas as pd
         print('Checking for Night Entries is started')
         from datetime import datetime
         GL_Copy = GL_Detail_YYYYMMDD_YYYYMMDD[['Journal_ID', 'Entered_Date', 'Entered_Time']].copy()
@@ -149,8 +167,7 @@ class Test_2_Procedures:
 
     #Check for individuals who posted 10 or fewer entries and identify entries made by these individuals
     def check_for_rare_users(GL_Detail_YYYYMMDD_YYYYMMDD):
-        import pandas as pd
-        import numpy as np
+
         print('Checking for Rare Users is started')
         GL_Pivot = GL_Detail_YYYYMMDD_YYYYMMDD.pivot_table(index=['Entered_By'], values='Journal_ID', 
                                                            aggfunc=np.count_nonzero).fillna(0)
@@ -164,8 +181,7 @@ class Test_2_Procedures:
 
     # Check for accounts that were used 3 or fewer times and identify entries made to these accounts
     def check_for_rare_accounts(GL_Detail_YYYYMMDD_YYYYMMDD):
-        import pandas as pd
-        import numpy as np
+
         print('Checking for Rare Accounts is started')
         GL_Pivot = GL_Detail_YYYYMMDD_YYYYMMDD.pivot_table(index=['GL_Account_Number'], values='Journal_ID', 
                                                             aggfunc=np.count_nonzero).fillna(0)
