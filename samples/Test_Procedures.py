@@ -19,27 +19,27 @@ class Test_1_Procedures:
     # This method assumes JE's are already sorted in ascending order
     
     @output_decorator
-    def check_for_gaps_in_JE_ID(GL_Detail_YYYYMMDD_YYYYMMDD, Journal_ID_Column = 'Journal_ID'):
-                
+    def check_for_gaps_in_JE_ID(GL_Detail,
+                                Journal_ID_Column = 'Journal_ID',
+                                output_file = 'Output_Folder/Test_3_1_1_check_for_gaps_in_JE_ID.csv'):        
         gaps = []
         previous = None
-        writer = csv.writer(open("Output_Folder/Test_3_1_1_check_for_gaps_in_JE_ID.csv", 'w'))
         
-        for item in GL_Detail_YYYYMMDD_YYYYMMDD[Journal_ID_Column]:
-            if not previous:
-                previous = item
-                continue
-                
-            if item - previous > 1:
-                writer.writerow([f'Gap identified! {previous} is followed by {item}'])
+        # Loop through each Journal ID, compare to previous
+        for item in GL_Detail[Journal_ID_Column]:
+            if previous and (item - previous > 1):
                 gaps.append([previous, item])
-                
             previous = item      
-
-        writer.writerow(['Test Results:']) 
-        writer.writerow([f'Total of {len(gaps)} gaps found'])
         
-        return ({"results":len(gaps), "output":"Output_Folder/Test_3_1_1_check_for_gaps_in_JE_ID.csv"})
+        # Write results to the output csv file.
+        with open(output_file, 'w') as file:
+            writer = csv.writer(file)
+            writer.writerow([f'Gap identified! Start gap number is followed by end gap number'])
+            writer.writerows(gaps)
+            writer.writerow(['Test Results:']) 
+            writer.writerow([f'Total of {len(gaps)} gaps found'])
+        
+        return ({"results":len(gaps), "output":output_file})
 
 
     # 3.1.2 Compare listing of journal entry numbers from system to log file
