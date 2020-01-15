@@ -2,6 +2,10 @@
 
 This repository displays the benefits of using Python and the Jupyter Notebook in a financial statement audit.
 
+## Requirements
+
+If you haven't already installed Python 3 and Jupyter, the easiest way to install both is by using [Anaconda](https://www.anaconda.com/distribution/).
+
 ## Usage
 
 TODO: Write usage instructions
