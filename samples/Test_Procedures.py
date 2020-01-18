@@ -1,49 +1,75 @@
-# TODO - refactor to clean up and document better
+import csv
+import pandas as pd
+import numpy as np
+
+# Decorator for printing function results. We return a results value to enable
+# automated testing of the methods upon refactoring.
+
+def output_decorator(func):
+    def inner(*args, **kwargs):
+        print(f'{func.__name__} is now started')
+        t = func(*args, **kwargs)
+        print(f'{t["results"]} instances detected')
+        print(f'Results saved at {t["output"]}')
+        return t["results"]
+    return inner
+
 
 class Test_1_Procedures:
+    
     # 3.1.1 - Test 1.1 Check for gaps in journal entry numbers
-    def check_for_gaps_in_JE_ID(GL_Detail_YYYYMMDD_YYYYMMDD):
-        print('Checking for gaps in Journal Entry IDs is started')
-        from collections import deque
-        import csv
-        writer = csv.writer(open("Output_Folder/Test_3_1_1_check_for_gaps_in_JE_ID.csv", 'w'))
-        je_nums = deque(maxlen=2)
+    # This method assumes JE's are already sorted in ascending order
+    
+    @output_decorator
+    def check_for_gaps_in_JE_ID(GL_Detail,
+                                Journal_ID_Column = 'Journal_ID',
+                                output_file = 'Output_Folder/Test_3_1_1_check_for_gaps_in_JE_ID.csv'):        
         gaps = []
-        for item in GL_Detail_YYYYMMDD_YYYYMMDD['Journal_ID']:
-            je_nums.append(item)
-            if len(je_nums) == 1:
-                continue
-            if je_nums[1] - je_nums[0] > 1:
-                writer.writerow(['Gap identified! {} is followed by {}'.format(*je_nums)])
-                gaps.append(list(je_nums))
-
-        writer.writerow(['Test Results:']) 
-        writer.writerow(['Total of {} gaps found'.format(len(gaps))])
-        print('%d instances detected' %len(gaps))
-        print('Results saved at Output_Folder/Test_3_1_1_check_for_gaps_in_JE_ID.csv')
+        previous = None
+        
+        # Loop through each Journal ID, compare to previous
+        for item in GL_Detail[Journal_ID_Column]:
+            if previous and (item - previous > 1):
+                gaps.append([previous, item])
+            previous = item      
+        
+        # Write results to the output csv file, set output_file = None for no
+        # output_file.
+        if output_file:
+            with open(output_file, 'w') as file:
+                writer = csv.writer(file)
+                writer.writerow([f'Gap identified! Start gap number is followed by end gap number'])
+                writer.writerows(gaps)
+                writer.writerow(['Test Results:']) 
+                writer.writerow([f'Total of {len(gaps)} gaps found'])
+        
+        return ({"results":len(gaps), "output":output_file})
 
 
     # 3.1.2 Compare listing of journal entry numbers from system to log file
-    def comparison_of_entries_of_GL_and_log_file(GL_Detail_YYYYMMDD_YYYYMMDD, Log_File_YYYYMMDD_YYYYMMDD):
-        print('Comparison of entries in General Ledger and Log File is  for gaps in Journal Entry IDs is started')
-        import csv
-        writer = csv.writer(open("Output_Folder/Test_3_1_2_Comparison_of_Entries_of_GL_and_Log_File.csv", 'w'))
+    @output_decorator
+    def comparison_of_entries_of_GL_and_log_file(GL_Detail_YYYYMMDD_YYYYMMDD,
+            Log_File_YYYYMMDD_YYYYMMDD, output_file = "Output_Folder/Test_3_1_2_Comparison_of_Entries_of_GL_and_Log_File.csv"):
+  
         In_GL_not_in_LOG = set(GL_Detail_YYYYMMDD_YYYYMMDD['Journal_ID']) - set(Log_File_YYYYMMDD_YYYYMMDD['Journal_ID'])
         In_LOG_not_in_GL = set(Log_File_YYYYMMDD_YYYYMMDD['Journal_ID']) - set(GL_Detail_YYYYMMDD_YYYYMMDD['Journal_ID'])
-        writer.writerow(['Following %a journal entries exist in General Ledger, but missing from the Log File:'
-                         %(len(In_GL_not_in_LOG))])
-        writer.writerow(list(In_GL_not_in_LOG))
-        writer.writerow(['------------------------------------------------------------------------------------'])
-        writer.writerow(['Amounts of following %a journal entries do not match their amounts in Log File:'
+        
+        if output_file:
+            with open(output_file, 'w') as file:
+                writer = csv.writer(file)
+                writer.writerow(['Following %a journal entries exist in General Ledger, but missing from the Log File:'
+                             %(len(In_GL_not_in_LOG))])
+                writer.writerow(list(In_GL_not_in_LOG))
+                writer.writerow(['-'*85])
+                writer.writerow(['Amounts of following %a journal entries do not match their amounts in Log File:'
                          %(len(In_LOG_not_in_GL))])
-        writer.writerow(list(In_LOG_not_in_GL))
-        print('%d instances detected' %(len(In_GL_not_in_LOG) + len(In_LOG_not_in_GL)))
-        print('Results saved at Output_Folder/Test_3_1_2_Comparison_of_Entries_of_GL_and_Log_File.csv')
-
+                writer.writerow(list(In_LOG_not_in_GL))
+        return ({"results": (len(In_LOG_not_in_GL) + len(In_GL_not_in_LOG)),
+                "output": output_file})
 
     # 3.1.3 Test 1.3 Compare total debit amounts and credit amounts of journal entries to system control totals by entry type
     def comparison_of_amounts_of_GL_and_log_file(GL_Detail_YYYYMMDD_YYYYMMDD, Log_File_YYYYMMDD_YYYYMMDD):
-        print('Comparison of amounts of entries in General Ledger and Log File is  for gaps in Journal Entry IDs is started')
+        
         gl_totals_pivot = GL_Detail_YYYYMMDD_YYYYMMDD.pivot_table(index=['Journal_ID', 'Amount_Credit_Debit_Indicator'], 
                       values='Net', 
                       aggfunc=sum).reset_index()
@@ -53,22 +79,26 @@ class Test_1_Procedures:
         recon_gl_to_log = recon_gl_to_log.drop('Entered_Date', axis=1)
         recon_gl_to_log = recon_gl_to_log.drop('Entered_Time', axis=1)
         failed_test = recon_gl_to_log.loc[recon_gl_to_log['Comparison'] != 0]
-        failed_test.to_csv('Output_Folder/Test_3_1_3_comparison_of_amounts_of_GL_and_log_file.csv')
-        print('%d instances detected' %len(failed_test['Journal_ID']))
-        print('Results saved at Output_Folder/Test_3_1_3_comparison_of_amounts_of_GL_and_log_file.csv')
+        
+        if output_file:
+            failed_test.to_csv('Output_Folder/Test_3_1_3_comparison_of_amounts_of_GL_and_log_file.csv')
+        
+        return ({"results": len(In_LOG_not_in_GL), "output": output_file})
 
 class Test_2_Procedures:    
     # 3.2.1 - Examine population for missing or incomplete journal entries
     # Pivot by Journal_ID and make sure Net is 0 for each Journal ID, to check if debits and credits are equal for each entry
-    def check_for_incomplete_entries(GL_Detail_YYYYMMDD_YYYYMMDD):
-        import pandas as pd
-        print('Checking for Incomplete Entries is started')
-        GL_Pivot = GL_Detail_YYYYMMDD_YYYYMMDD.pivot_table(index='Journal_ID', values='Net', aggfunc=sum)
+    def check_for_incomplete_entries(GL_Detail_YYYYMMDD_YYYYMMDD,
+    output_file='', Journal_ID_Column = 'Journal_ID'):
+        
+        GL_Pivot = GL_Detail_YYYYMMDD_YYYYMMDD.pivot_table(index=Journal_ID_Column, values='Net', aggfunc=sum)
         failed_test = GL_Pivot.loc[round(GL_Pivot['Net'], 2) != 0]
         failed_test = pd.DataFrame(failed_test.to_records())
-        failed_test.to_csv('Output_Folder/Test_3_2_1_check_for_incomplete_entries.csv')
-        print('%d instances detected' %len(failed_test['Journal_ID']))
-        print('Results saved at Output_Folder/Test_3_2_1_check_for_incomplete_entries.csv')
+        
+        if output_file:
+            failed_test.to_csv('Output_Folder/Test_3_2_1_check_for_incomplete_entries.csv')
+        
+        return ({"results": len(failed_test[Journal_ID_Column]), "output": output_file})
 
     # 3.2.2 - Examine possible duplicate account entries
     # Check for Journal Entries that have same account and amount in the same period
@@ -131,7 +161,6 @@ class Test_2_Procedures:
 
     # Check if Entry Time falls on between 8pm and 6am
     def check_for_nights_entries(GL_Detail_YYYYMMDD_YYYYMMDD):
-        import pandas as pd
         print('Checking for Night Entries is started')
         from datetime import datetime
         GL_Copy = GL_Detail_YYYYMMDD_YYYYMMDD[['Journal_ID', 'Entered_Date', 'Entered_Time']].copy()
@@ -149,8 +178,7 @@ class Test_2_Procedures:
 
     #Check for individuals who posted 10 or fewer entries and identify entries made by these individuals
     def check_for_rare_users(GL_Detail_YYYYMMDD_YYYYMMDD):
-        import pandas as pd
-        import numpy as np
+
         print('Checking for Rare Users is started')
         GL_Pivot = GL_Detail_YYYYMMDD_YYYYMMDD.pivot_table(index=['Entered_By'], values='Journal_ID', 
                                                            aggfunc=np.count_nonzero).fillna(0)
@@ -164,8 +192,7 @@ class Test_2_Procedures:
 
     # Check for accounts that were used 3 or fewer times and identify entries made to these accounts
     def check_for_rare_accounts(GL_Detail_YYYYMMDD_YYYYMMDD):
-        import pandas as pd
-        import numpy as np
+
         print('Checking for Rare Accounts is started')
         GL_Pivot = GL_Detail_YYYYMMDD_YYYYMMDD.pivot_table(index=['GL_Account_Number'], values='Journal_ID', 
                                                             aggfunc=np.count_nonzero).fillna(0)
