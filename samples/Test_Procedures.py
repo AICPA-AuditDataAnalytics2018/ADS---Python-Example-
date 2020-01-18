@@ -5,14 +5,21 @@ import numpy as np
 # Decorator for printing function results. We return a results value to enable
 # automated testing of the methods upon refactoring.
 
-def output_decorator(func):
-    def inner(*args, **kwargs):
-        print(f'{func.__name__} is now started')
-        t = func(*args, **kwargs)
-        print(f'{t["results"]} instances detected')
-        print(f'Results saved at {t["output"]}')
-        return t["results"]
-    return inner
+def output_decorator(msg=None):
+    def wrapper(func):
+        def inner(*args, **kwargs):
+            
+            if msg:
+                print(msg)
+            else:
+                print(f'{func.__name__} is now started')
+            
+            t = func(*args, **kwargs)
+            print(f'{t["results"]} instances detected')
+            print(f'Results saved at {t["output"]}')
+            return t["results"]
+        return inner
+    return wrapper
 
 
 class Test_1_Procedures:
