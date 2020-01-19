@@ -27,10 +27,11 @@ class Test_1_Procedures:
     # 3.1.1 - Test 1.1 Check for gaps in journal entry numbers
     # This method assumes JE's are already sorted in ascending order
     
-    @output_decorator
-    def check_for_gaps_in_JE_ID(GL_Detail,
-                                Journal_ID_Column = 'Journal_ID',
-                                output_file = 'Output_Folder/Test_3_1_1_check_for_gaps_in_JE_ID.csv'):        
+    @output_decorator()
+    def check_for_gaps_in_JE_ID(
+            GL_Detail, Journal_ID_Column = 'Journal_ID',
+            output_file = 'Output_Folder/Test_3_1_1_check_for_gaps_in_JE_ID.csv'):        
+        
         gaps = []
         previous = None
         
@@ -54,12 +55,13 @@ class Test_1_Procedures:
 
 
     # 3.1.2 Compare listing of journal entry numbers from system to log file
-    @output_decorator
-    def comparison_of_entries_of_GL_and_log_file(GL_Detail_YYYYMMDD_YYYYMMDD,
-            Log_File_YYYYMMDD_YYYYMMDD, output_file = "Output_Folder/Test_3_1_2_Comparison_of_Entries_of_GL_and_Log_File.csv"):
+    @output_decorator()
+    def comparison_of_entries_of_GL_and_log_file(
+            GL_Detail, Log_File, Journal_ID_Column = 'Journal_ID',
+            output_file = "Output_Folder/Test_3_1_2_Comparison_of_Entries_of_GL_and_Log_File.csv"):
   
-        In_GL_not_in_LOG = set(GL_Detail_YYYYMMDD_YYYYMMDD['Journal_ID']) - set(Log_File_YYYYMMDD_YYYYMMDD['Journal_ID'])
-        In_LOG_not_in_GL = set(Log_File_YYYYMMDD_YYYYMMDD['Journal_ID']) - set(GL_Detail_YYYYMMDD_YYYYMMDD['Journal_ID'])
+        In_GL_not_in_LOG = set(GL_Detail[Journal_ID_Column]) - set(Log_File[Journal_ID_Column])
+        In_LOG_not_in_GL = set(Log_File[Journal_ID_Column]) - set(GL_Detail[Journal_ID_Column])
         
         if output_file:
             with open(output_file, 'w') as file:
@@ -71,26 +73,35 @@ class Test_1_Procedures:
                 writer.writerow(['Amounts of following %a journal entries do not match their amounts in Log File:'
                          %(len(In_LOG_not_in_GL))])
                 writer.writerow(list(In_LOG_not_in_GL))
+
         return ({"results": (len(In_LOG_not_in_GL) + len(In_GL_not_in_LOG)),
                 "output": output_file})
 
     # 3.1.3 Test 1.3 Compare total debit amounts and credit amounts of journal entries to system control totals by entry type
-    def comparison_of_amounts_of_GL_and_log_file(GL_Detail_YYYYMMDD_YYYYMMDD, Log_File_YYYYMMDD_YYYYMMDD):
+    @output_decorator()
+    def comparison_of_amounts_of_GL_and_log_file(
+            GL_Detail, Log_File, Journal_ID_Column = 'Journal_ID',
+            Cr_Db_Indicator = 'Amount_Credit_Debit_Indicator',
+            output_file = 'Output_Folder/Test_3_1_3_comparison_of_amounts_of_GL_and_log_file.csv'):
         
-        gl_totals_pivot = GL_Detail_YYYYMMDD_YYYYMMDD.pivot_table(index=['Journal_ID', 'Amount_Credit_Debit_Indicator'], 
-                      values='Net', 
-                      aggfunc=sum).reset_index()
-        recon_gl_to_log = gl_totals_pivot.merge(Log_File_YYYYMMDD_YYYYMMDD, on = ['Journal_ID', 'Amount_Credit_Debit_Indicator'], 
-                                                how = 'outer').fillna(0)
+        index_cols = [Journal_ID_Column, Cr_Db_Indicator]
+
+        recon_gl_to_log = GL_Detail.pivot_table(
+                index = index_cols, values = 'Net',
+                aggfunc = sum).reset_index().merge(
+                        Log_File, on = index_cols, 
+                        how = 'outer').fillna(0)
+
         recon_gl_to_log['Comparison'] = round(abs(recon_gl_to_log['Net']), 2) - round(abs(recon_gl_to_log['Total']), 2)
         recon_gl_to_log = recon_gl_to_log.drop('Entered_Date', axis=1)
         recon_gl_to_log = recon_gl_to_log.drop('Entered_Time', axis=1)
+        
         failed_test = recon_gl_to_log.loc[recon_gl_to_log['Comparison'] != 0]
         
         if output_file:
-            failed_test.to_csv('Output_Folder/Test_3_1_3_comparison_of_amounts_of_GL_and_log_file.csv')
+            failed_test.to_csv(output_file)
         
-        return ({"results": len(In_LOG_not_in_GL), "output": output_file})
+        return ({"results": len(failed_test), "output": output_file})
 
 class Test_2_Procedures:    
     # 3.2.1 - Examine population for missing or incomplete journal entries
