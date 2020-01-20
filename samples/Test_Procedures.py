@@ -68,12 +68,12 @@ class Test_1_Procedures:
         if output_file:
             with open(output_file, 'w') as file:
                 writer = csv.writer(file)
-                writer.writerow(['Following %a journal entries exist in General Ledger, but missing from the Log File:'
-                             %(len(In_GL_not_in_LOG))])
+                writer.writerow([f'Following {len(In_GL_not_in_LOG)} journal entries exist'+
+                                 'in General Ledger, but are missing from the Log File:'])
                 writer.writerow(list(In_GL_not_in_LOG))
                 writer.writerow(['-'*85])
-                writer.writerow(['Amounts of following %a journal entries do not match their amounts in Log File:'
-                         %(len(In_LOG_not_in_GL))])
+                writer.writerow([f'Following {len(In_LOG_not_in_GL)} journal entries exist in Log File,'+
+                                 ' but are missing from the General Ledger:'])
                 writer.writerow(list(In_LOG_not_in_GL))
 
         return ({"results": (len(In_LOG_not_in_GL) + len(In_GL_not_in_LOG)),
