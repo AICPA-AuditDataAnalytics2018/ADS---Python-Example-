@@ -6,15 +6,16 @@ from datetime import datetime
 # Decorator for printing function results. We return a results value to enable
 # automated testing of the methods upon refactoring.
 
+
 def output_decorator(msg=None):
     def wrapper(func):
         def inner(*args, **kwargs):
-            
+
             if msg:
                 print(msg)
             else:
                 print(f'{func.__name__} is now started')
-            
+
             t = func(*args, **kwargs)
             print(f'{t["results"]} instances detected')
             print(f'Results saved at {t["output"]}')
@@ -24,108 +25,122 @@ def output_decorator(msg=None):
 
 
 class Test_1_Procedures:
-    
+
     # 3.1.1 - Test 1.1 Check for gaps in journal entry numbers
     # This method assumes JE's are already sorted in ascending order
-    
+
     @output_decorator()
     def check_for_gaps_in_JE_ID(
-            GL_Detail, Journal_ID_Column = 'Journal_ID',
-            output_file = 'Output_Folder/Test_3_1_1_check_for_gaps_in_JE_ID.csv'):        
-        
+            GL_Detail, Journal_ID_Column='Journal_ID',
+            output_file='Output_Folder/'
+            + 'Test_3_1_1_check_for_gaps_in_JE_ID.csv'):
+
         gaps = []
         previous = None
-        
+
         # Loop through each Journal ID, compare to previous
         for item in GL_Detail[Journal_ID_Column]:
             if previous and (item - previous > 1):
                 gaps.append([previous, item])
-            previous = item      
-        
+            previous = item
+
         # Write results to the output csv file, set output_file = None for no
         # output_file.
         if output_file:
             with open(output_file, 'w') as file:
                 writer = csv.writer(file)
-                writer.writerow([f'Gap identified! Start gap number is followed by end gap number'])
+                writer.writerow([f'Gap identified!'
+                    + 'Start gap number is followed by end gap number'])
                 writer.writerows(gaps)
-                writer.writerow(['Test Results:']) 
+                writer.writerow(['Test Results:'])
                 writer.writerow([f'Total of {len(gaps)} gaps found'])
-        
-        return ({"results":len(gaps), "output":output_file})
 
+        return ({"results": len(gaps), "output": output_file})
 
     # 3.1.2 Compare listing of journal entry numbers from system to log file
-    
     @output_decorator()
     def comparison_of_entries_of_GL_and_log_file(
-            GL_Detail, Log_File, Journal_ID_Column = 'Journal_ID',
-            output_file = "Output_Folder/Test_3_1_2_Comparison_of_Entries_of_GL_and_Log_File.csv"):
-  
-        In_GL_not_in_LOG = set(GL_Detail[Journal_ID_Column]) - set(Log_File[Journal_ID_Column])
-        In_LOG_not_in_GL = set(Log_File[Journal_ID_Column]) - set(GL_Detail[Journal_ID_Column])
-        
+            GL_Detail, Log_File, Journal_ID_Column='Journal_ID',
+            output_file="Output_Folder/"
+            + "Test_3_1_2_Comparison_of_Entries_of_GL_and_Log_File.csv"):
+
+        In_GL_not_in_LOG = (set(GL_Detail[Journal_ID_Column])
+                            - set(Log_File[Journal_ID_Column]))
+        In_LOG_not_in_GL = (set(Log_File[Journal_ID_Column])
+                            - set(GL_Detail[Journal_ID_Column]))
+
         if output_file:
             with open(output_file, 'w') as file:
                 writer = csv.writer(file)
-                writer.writerow([f'Following {len(In_GL_not_in_LOG)} journal entries exist'+
-                                 'in General Ledger, but are missing from the Log File:'])
+                writer.writerow([f'Following {len(In_GL_not_in_LOG)}'
+                    + ' journal entries exist in General Ledger, but'
+                    + ' are missing from the Log File:'])
                 writer.writerow(list(In_GL_not_in_LOG))
                 writer.writerow(['-'*85])
-                writer.writerow([f'Following {len(In_LOG_not_in_GL)} journal entries exist in Log File,'+
-                                 ' but are missing from the General Ledger:'])
+                writer.writerow([f'Following {len(In_LOG_not_in_GL)}'
+                    + ' journal entries exist in Log File, but'
+                    + ' are missing from the General Ledger:'])
                 writer.writerow(list(In_LOG_not_in_GL))
 
         return ({"results": (len(In_LOG_not_in_GL) + len(In_GL_not_in_LOG)),
                 "output": output_file})
 
-    # 3.1.3 Test 1.3 Compare total debit amounts and credit amounts of journal entries to system control totals by entry type
-    
+    # 3.1.3 Test 1.3 Compare total debit amounts and credit amounts of
+    # journal entries to system control totals by entry type
+
     @output_decorator()
     def comparison_of_amounts_of_GL_and_log_file(
-            GL_Detail, Log_File, Journal_ID_Column = 'Journal_ID',
-            Cr_Db_Indicator = 'Amount_Credit_Debit_Indicator',
-            output_file = 'Output_Folder/Test_3_1_3_comparison_of_amounts_of_GL_and_log_file.csv'):
-        
+            GL_Detail, Log_File, Journal_ID_Column='Journal_ID',
+            Cr_Db_Indicator='Amount_Credit_Debit_Indicator',
+            output_file='Output_Folder/Test_3_1_3_comparison_'
+            + 'of_amounts_of_GL_and_log_file.csv'):
+
         index_cols = [Journal_ID_Column, Cr_Db_Indicator]
 
         recon_gl_to_log = GL_Detail.pivot_table(
-                index = index_cols, values = 'Net',
-                aggfunc = sum).reset_index().merge(
-                        Log_File, on = index_cols, 
-                        how = 'outer').fillna(0)
+                index=index_cols, values='Net',
+                aggfunc=sum).reset_index().merge(
+                        Log_File, on=index_cols,
+                        how='outer').fillna(0)
 
-        recon_gl_to_log['Comparison'] = round(abs(recon_gl_to_log['Net']), 2) - round(abs(recon_gl_to_log['Total']), 2)
+        recon_gl_to_log['Comparison'] = (round(abs(recon_gl_to_log['Net']), 2)
+                                    - round(abs(recon_gl_to_log['Total']), 2))
         recon_gl_to_log = recon_gl_to_log.drop('Entered_Date', axis=1)
         recon_gl_to_log = recon_gl_to_log.drop('Entered_Time', axis=1)
-        
+
         failed_test = recon_gl_to_log.loc[recon_gl_to_log['Comparison'] != 0]
-        
+
         if output_file:
             failed_test.to_csv(output_file)
-        
+
         return ({"results": len(failed_test), "output": output_file})
+
 
 class Test_2_Procedures:    
     # 3.2.1 - Examine population for missing or incomplete journal entries
-    # Pivot by Journal_ID and make sure Net is 0 for each Journal ID, to check if debits and credits are equal for each entry
+    # Pivot by Journal_ID and make sure Net is 0 for each Journal ID,
+    # to check if debits and credits are equal for each entry
 
     @output_decorator()
     def check_for_incomplete_entries(GL_Detail,
-                output_file='Output_Folder/Test_3_2_1_check_for_incomplete_entries.csv',
-                Journal_ID_Column = 'Journal_ID'):
-        
-        GL_Pivot = GL_Detail.pivot_table(index=Journal_ID_Column, values='Net', aggfunc=sum)
+                output_file='Output_Folder/'
+                    + 'Test_3_2_1_check_for_incomplete_entries.csv',
+                Journal_ID_Column='Journal_ID'):
+
+        GL_Pivot = GL_Detail.pivot_table(index=Journal_ID_Column,
+                                        values='Net', aggfunc=sum)
         failed_test = GL_Pivot.loc[round(GL_Pivot['Net'], 2) != 0]
         failed_test = pd.DataFrame(failed_test.to_records())
-        
+
         if output_file:
             failed_test.to_csv(output_file)
-        
-        return ({"results": len(failed_test[Journal_ID_Column]), "output": output_file})
+
+        return ({"results": len(failed_test[Journal_ID_Column]),
+                "output": output_file})
 
     # 3.2.2 - Examine possible duplicate account entries
-    # Check for Journal Entries that have same account and amount in the same period
+    # Check for Journal Entries that have same account
+    # and amount in the same period.
 
     @output_decorator()
     def check_for_duplicate_entries(GL_Detail, Journal_ID_Column = 'Journal_ID',
