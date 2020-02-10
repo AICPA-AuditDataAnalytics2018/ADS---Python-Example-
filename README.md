@@ -28,17 +28,6 @@ TODO: Write usage instructions
 
 TODO: Write history
 
-** Consider adding an __init__ method to Test_Procedures, to reduce data entry:
-```python
-def __init__(self, GL_Detail, Log_File=None, JE_Column=None, Output=None):
-   # Checks to make sure data is valid
-   assert JE_Column in GL_Detail.columns
-   self.GL_Detail = GL_Detail
-   ...
-def run():
-   # Execute all procedures in module
-```
-
 ## Credits
 
 TODO: Write credits
